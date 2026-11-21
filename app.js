@@ -1,6 +1,6 @@
 /* MEP Global | Villas Link Platform — client page (GitHub Pages)
    The only setting to change: API_URL = the Apps Script web app address ending in /exec. */
-const API_URL = https://script.google.com/macros/s/AKfycbwnAKLT1VF9m-C1GsaZ7cvc2aYq_J67aE3SHLNh1WVoaKNITpZ0wzWjH4GjOhPfPatn/exec;
+const API_URL = "https://script.google.com/macros/s/AKfycbwnAKLT1VF9m-C1GsaZ7cvc2aYq_J67aE3SHLNh1WVoaKNITpZ0wzWjH4GjOhPfPatn/exec";
 
 const screen = document.getElementById("screen");
 const token = new URLSearchParams(location.search).get("t") || "";
