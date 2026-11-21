@@ -1,0 +1,65 @@
+:root{--ink:#1b424b;--teal:#147d87;--quiet:#596669;--gold:#b29754;--line:#e5ebeb;--wash:#f5f9f9;color:var(--ink);font-family:Arial,sans-serif;background:#fff}
+*{box-sizing:border-box}
+body{margin:0}
+header{display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:12px max(16px,calc((100% - 1120px)/2))}
+.brand-logo{display:block;width:clamp(110px,22vw,150px);height:auto}
+.tag{font-size:13px;font-weight:bold;color:var(--teal);text-align:left}
+small{display:block;color:var(--quiet);font-size:12px;font-weight:normal;margin-top:4px;line-height:1.4}
+main{width:min(1120px,100% - 32px);margin:28px auto;min-height:55vh;outline:none}
+footer{text-align:center;font-size:11px;color:var(--quiet);border-top:1px solid var(--line);padding:18px 16px}
+h1,h2,p{margin:0 0 12px}
+h1{font-size:clamp(26px,5vw,46px);letter-spacing:-.02em}
+h2{font-size:20px}
+h1 span,h2 span,.en{display:block;direction:ltr;text-align:right;color:var(--quiet);font-size:.6em;letter-spacing:0;margin-top:6px;font-weight:normal}
+p{color:var(--quiet);line-height:1.6}
+a{text-decoration:none;color:var(--teal)}
+button,.btn{font:inherit;cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-height:48px;border:1px solid var(--line);padding:10px 16px;border-radius:10px;background:#fff;color:var(--ink);gap:3px;text-align:center}
+button:disabled{opacity:.6;cursor:wait}
+.primary{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:bold}
+.primary small{color:#fff;margin:0}
+.loading,.notice{text-align:center;padding:60px 10px;color:var(--quiet)}
+.notice h2{color:var(--ink)}
+.notice .btn,.notice button{margin-top:10px}
+.intro{border:1px solid var(--line);border-radius:18px;padding:clamp(26px,6vw,64px);text-align:center;background:linear-gradient(180deg,#fff,var(--wash));box-shadow:0 5px 20px #1b424b08}
+.intro .rule{width:42px;height:2px;background:var(--gold);margin:0 auto 18px}
+.intro h1 span{text-align:center}
+.brandline{color:var(--teal);font-size:14px;font-weight:bold;margin-bottom:14px}
+.intro button{margin-top:10px;min-width:min(320px,100%)}
+.grid{display:grid;gap:14px;margin-top:20px}
+.areas{grid-template-columns:repeat(2,minmax(0,1fr))}
+.area,.card,.details-copy{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 16px #1b424b07}
+.area{padding:18px;color:var(--ink);border-top:3px solid var(--teal);min-height:104px;display:block}
+.area h2{margin-bottom:8px}
+.area p{font-size:13px;margin:0}
+.crumb{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:14px}
+.crumb a{padding:6px 0}
+.card{display:flex;flex-direction:column;color:var(--ink)}
+.photo-box{position:relative;width:100%;aspect-ratio:1.55;background:var(--wash);overflow:hidden}
+.photo-box img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-box .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--quiet);font-size:12px;text-align:center;padding:10px}
+.card-copy,.details-copy{padding:16px}
+.card h2{font-size:17px}
+.price{color:var(--teal);font-size:22px;font-weight:700;margin:8px 0}
+.price small{font-weight:normal}
+.specs{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.specs span{border-radius:7px;background:var(--wash);padding:7px 9px;font-size:13px}
+.specs small{margin-top:3px}
+.card .btn{width:100%;margin-top:auto}
+.gallery{margin:0 0 16px}
+.gallery .photo-box{border-radius:13px;aspect-ratio:1.4}
+.gallery-actions{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0}
+.gallery-actions button{min-width:64px}
+.counter{font-size:14px;color:var(--quiet);min-width:60px;text-align:center;direction:ltr}
+.desc{white-space:pre-line;line-height:1.75;color:var(--ink);font-size:14px;margin:0}
+.desc-en{direction:ltr;text-align:left;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.detail-grid{display:grid;gap:16px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+main:focus,main:focus-visible{outline:none}
+.details-copy h1{font-size:clamp(22px,4vw,32px)}
+@media(min-width:700px){
+  .areas{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detail-grid{grid-template-columns:1.1fr 1fr;align-items:start}
+}
+@media(min-width:1000px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:360px){.tag{font-size:11px}}
