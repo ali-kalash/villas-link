@@ -167,34 +167,51 @@ function placeholder(box, ar, en) {
   box.innerHTML = '<div class="ph">' + label(ar, en) + "</div>";
 }
 
-async function putPhoto(box, v, index, size) {
-  if (!v.photoCount) { placeholder(box, "لا توجد صور", "No photos"); return; }
-  placeholder(box, "جارٍ تحميل الصورة…", "Loading photo…");
+// One loader for both modes. Each photo is fetched once; the promise is reused,
+// so a photo that was loaded in advance appears instantly.
+const photoLoads = new Map();
+function photoSrc(v, index, size) {
+  const key = v.id + "|" + index + "|" + size;
+  if (photoLoads.has(key)) return photoLoads.get(key);
+  let job;
   if (photoMode === "public") {
     const urls = publicUrls(v.photos[index], size);
-    const img = new Image();
-    img.alt = v.titleAr || v.titleEn || "";
-    img.referrerPolicy = "no-referrer";
-    let n = 0;
-    img.onerror = () => { n++; if (n < urls.length) img.src = urls[n]; else placeholder(box, "الصورة غير متاحة", "Photo unavailable"); };
-    img.onload = () => { box.innerHTML = ""; box.appendChild(img); };
-    img.src = urls[0];
-    return;
+    job = new Promise(resolve => {
+      const img = new Image();
+      img.referrerPolicy = "no-referrer";
+      let n = 0;
+      img.onload = () => resolve(img.src);
+      img.onerror = () => { n++; if (n < urls.length) img.src = urls[n]; else resolve(null); };
+      img.src = urls[0];
+    });
+  } else {
+    job = api({ action: "photo", id: v.id, i: index }).then(r => {
+      if (r.state !== "active") { handleState(r.state); return null; }
+      return r.photo || null;
+    }).catch(() => null);
   }
-  const key = v.id + "|" + index;
-  let src = photoCache.get(key);
-  if (!src) {
-    try {
-      const r = await api({ action: "photo", id: v.id, i: index });
-      if (r.state !== "active") { handleState(r.state); return; }
-      src = r.photo;
-      if (src) photoCache.set(key, src);
-    } catch (_) { src = null; }
-  }
-  if (!box.isConnected) return;
+  job.then(src => { if (!src) photoLoads.delete(key); }); // allow a retry later
+  photoLoads.set(key, job);
+  return job;
+}
+
+function preload(v, indexes, size) {
+  indexes.forEach(i => { if (i >= 0 && i < v.photoCount) photoSrc(v, i, size); });
+}
+
+async function putPhoto(box, v, index, size) {
+  if (!v.photoCount) { placeholder(box, "لا توجد صور", "No photos"); return; }
+  const want = v.id + "|" + index;
+  box.dataset.want = want;
+  const shown = box.querySelector("img");
+  if (shown) shown.classList.add("dim");            // keep the old photo until the new one is ready
+  else placeholder(box, "جارٍ تحميل الصورة…", "Loading photo…");
+  const src = await photoSrc(v, index, size);
+  if (!box.isConnected || box.dataset.want !== want) return;
   if (!src) { placeholder(box, "الصورة غير متاحة", "Photo unavailable"); return; }
   const img = new Image();
   img.alt = v.titleAr || v.titleEn || "";
+  img.referrerPolicy = "no-referrer";
   img.src = src;
   box.innerHTML = "";
   box.appendChild(img);
@@ -213,13 +230,9 @@ function showMainPhoto(v) {
   const counter = document.getElementById("counter");
   if (counter) counter.textContent = (current.index + 1) + " / " + v.photoCount;
   if (box) putPhoto(box, v, current.index, 1000);
-  // Load the next photo early so swiping feels quick (protected mode only).
-  if (photoMode === "protected" && v.photoCount > 1) {
-    const next = (current.index + 1) % v.photoCount;
-    if (!photoCache.has(v.id + "|" + next)) {
-      api({ action: "photo", id: v.id, i: next }).then(r => { if (r && r.photo) photoCache.set(v.id + "|" + next, r.photo); }).catch(() => {});
-    }
-  }
+  // Load the next two and the previous photo in advance so swiping is instant.
+  const n = v.photoCount, i = current.index;
+  if (n > 1) preload(v, [(i + 1) % n, (i + 2) % n, (i - 1 + n) % n], 1000);
 }
 
 /* ---------------- flow ---------------- */
@@ -230,13 +243,19 @@ function handleState(state) {
   else errorScreen();
 }
 
-async function loadData() {
-  const r = await api({ action: "data" });
+// Uses the villas list from an answer; returns false when access is not active.
+function applyData(r) {
   if (r.state !== "active") { handleState(r.state); return false; }
   villas = r.villas || [];
   loadedDay = muscatDay();
   photoMode = r.photoMode === "public" ? "public" : "protected";
+  // Start loading every villa's cover now, so the lists open with photos ready.
+  villas.slice(0, 30).forEach(v => preload(v, [0], 600));
   return true;
+}
+
+async function loadData() {
+  return applyData(await api({ action: "data" }));
 }
 
 async function route() {
@@ -254,8 +273,7 @@ async function start() {
   if (!token) { invalidScreen(); return; }
   loadingScreen();
   try {
-    const s = await api({ action: "status" });
-    if (s.state !== "active") { handleState(s.state); return; }
+    // One request: it checks access and returns the villas together.
     if (await loadData()) route();
   } catch (_) {
     errorScreen();
@@ -270,7 +288,8 @@ screen.addEventListener("click", async e => {
       const r = await api({ action: "activate" });
       if (r.state !== "active") { handleState(r.state); return; }
       loadingScreen();
-      if (await loadData()) route();
+      // Newer backend returns the villas with the activation; otherwise ask for them.
+      if (r.villas ? applyData(r) : await loadData()) route();
     } catch (_) { errorScreen(); }
     return;
   }
