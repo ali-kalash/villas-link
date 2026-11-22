@@ -41,11 +41,14 @@ async function api(params) {
   const started = Date.now();
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 30000);
-    const res = await fetch(apiUrl(params), { signal: ctrl.signal, redirect: "follow", credentials: "omit" });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return await res.json();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const res = await fetch(apiUrl(params), { signal: ctrl.signal, redirect: "follow", credentials: "omit" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return await res.json(); // the time limit also covers reading the answer
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (e) {
     const first = "A:" + ((e && (e.name + " " + e.message)) || "?") + " " + Math.round((Date.now() - started) / 1000) + "s";
     try {
@@ -63,7 +66,7 @@ function jsonp(params) {
     const name = "mepCb" + (++jsonpCount) + "_" + Date.now();
     const s = document.createElement("script");
     const done = () => { delete window[name]; s.remove(); clearTimeout(timer); };
-    const timer = setTimeout(() => { done(); reject(new Error("timeout")); }, 30000);
+    const timer = setTimeout(() => { done(); reject(new Error("timeout")); }, 20000);
     window[name] = data => { done(); resolve(data); };
     s.onerror = () => { done(); reject(new Error("network")); };
     s.src = apiUrl({ ...params, callback: name });
