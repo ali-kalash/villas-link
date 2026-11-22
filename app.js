@@ -34,7 +34,11 @@ function apiUrl(params) {
   return API_URL + "?" + q.toString();
 }
 
+// Last network problem, shown in small text on the error screen to help find the cause.
+let lastProblem = "";
+
 async function api(params) {
+  const started = Date.now();
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 30000);
@@ -42,8 +46,14 @@ async function api(params) {
     clearTimeout(timer);
     if (!res.ok) throw new Error("HTTP " + res.status);
     return await res.json();
-  } catch (_) {
-    return jsonp(params); // second route for browsers that block the first one
+  } catch (e) {
+    const first = "A:" + ((e && (e.name + " " + e.message)) || "?") + " " + Math.round((Date.now() - started) / 1000) + "s";
+    try {
+      return await jsonp(params); // second route for browsers that block the first one
+    } catch (e2) {
+      lastProblem = first + " | B:" + ((e2 && e2.message) || "?") + " " + Math.round((Date.now() - started) / 1000) + "s";
+      throw e2;
+    }
   }
 }
 
@@ -69,9 +79,10 @@ function invalidScreen() {
 }
 
 function errorScreen() {
+  const code = lastProblem || "state:error";
   show('<div class="notice"><h2>' + twoLine("تعذّر تحميل البيانات", "Could not load the data") +
     "</h2><p>" + label("تحقّق من الاتصال ثم حاول مرة أخرى.", "Check your connection and try again.") +
-    '</p><button class="primary" type="button" data-retry>' + label("إعادة المحاولة", "Try again") + "</button></div>");
+    '</p><button class="primary" type="button" data-retry>' + label("إعادة المحاولة", "Try again") + '</button><p class="diag" dir="ltr">' + esc(code) + "</p></div>");
 }
 
 function loadingScreen() {
